@@ -121,7 +121,8 @@ def transform_display_df(df, session, thresh=.75):
     dfl['TrialTransitionTime'] = dfl['TrialTime'] - dfl['DisplayLatency']
     dfl['ThreshPerc'] = thresh
 
-    return add_clusters(dfl)
+    return dfl #add_clusters(dfl)
+
 
 
 def compute_sse(x1, x2, win=100):
