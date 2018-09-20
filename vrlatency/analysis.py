@@ -122,7 +122,7 @@ def transform_display_df(df, session, thresh=.75):
     dfl['TrialTransitionTime'] = dfl['TrialTime'] - dfl['DisplayLatency']
     dfl['ThreshPerc'] = thresh
 
-    return dfl #add_clusters(dfl)
+    return add_clusters(dfl)
 
 
 def compute_sse(x1, x2, win=100):
@@ -163,6 +163,7 @@ def shift_by_sse(dd, winsize=30):
         residuals = compute_sse(test_sensor, ref_sensor, win=winsize)
         minimum = find_global_minimum(residuals)
         offset = minimum - winsize // 2
+
         dd.loc[dd.Trial == trialnum, 'TrialTransitionTime'] -= offset * sampling_rate
 
     return dd
@@ -179,7 +180,6 @@ def get_average_time_and_brightness(dd, bins=70):
 
 def plot_shifted_brightness_over_session(time, sensor_brightness, shift_by, trial_idx, ax=None):
     """creates a plot of all the shifted (overlaid on each other) brightness values over a single session
-
     Args:
         time: time points as the x-axis
         sesnor_brightness: brightness values
