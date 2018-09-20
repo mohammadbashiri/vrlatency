@@ -98,16 +98,10 @@ def add_clusters(dd, winsize=10, sse_thresh=.1):
 
     for trialnum, trial in dd2.groupby('Trial'):
         test_sensor = trial['SensorBrightness'].values
-
-        try:
-            residuals = compute_sse(test_sensor, ref_sensor, win=winsize)
-            residuals = residuals / residuals.max()
-            minimum = find_global_minimum(residuals)
-            min_sse = residuals[minimum]
-
-        except ValueError:
-            min_sse = 0
-
+        residuals = compute_sse(test_sensor, ref_sensor, win=winsize)
+        residuals = residuals / residuals.max()
+        minimum = find_global_minimum(residuals)
+        min_sse = residuals[minimum]
         dd.loc[dd.Trial == trialnum, 'Cluster'] = 0 if min_sse < sse_thresh else 1
 
     return dd
@@ -127,7 +121,6 @@ def transform_display_df(df, session, thresh=.75):
     dfl['ThreshPerc'] = thresh
 
     return dfl #add_clusters(dfl)
-
 
 
 def compute_sse(x1, x2, win=100):
@@ -160,18 +153,21 @@ def shift_by_sse(dd):
     winsize = 30
     for trialnum, trial in dd2.groupby('Trial'):
         test_sensor = trial['SensorBrightness'].values
-
-        try:
-            residuals = compute_sse(test_sensor, ref_sensor, win=winsize)
-            minimum = find_global_minimum(residuals)
-            offset = minimum - winsize // 2
-
-        except ValueError:
-            offset = 0
-
+        residuals = compute_sse(test_sensor, ref_sensor, win=winsize)
+        minimum = find_global_minimum(residuals)
+        offset = minimum - winsize // 2
         dd.loc[dd.Trial == trialnum, 'TrialTransitionTime'] -= offset * sampling_rate
 
     return dd
+
+
+def get_average_time_and_brightness(dd, bins=70):
+    """Returns an average signal representing the time and the brightness value"""
+    time_intervals = pd.cut(dd["TrialTransitionTime"], bins=bins)
+    avg_transitiontime = dd.groupby(time_intervals).TrialTransitionTime.apply(np.mean)
+    avg_brightness = dd.groupby(time_intervals).SensorBrightness.apply(np.mean)
+
+    return avg_transitiontime.values, avg_brightness.values
 
 
 def plot_shifted_brightness_over_session(time, sensor_brightness, shift_by, trial_idx, ax=None):
