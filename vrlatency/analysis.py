@@ -50,8 +50,11 @@ def get_tracking_latencies(df):
     """ Returns the latency values for each trial of a Tracking Experiment"""
     def detect_latency(df, thresh):
         diff = np.diff(df.RigidBody_Position > thresh)
-        idx = np.where(diff != 0)[0][0]
-        return df.Time.iloc[idx] - df.Time.iloc[0]
+        try:
+            idx = np.where(diff != 0)[0][0]
+            return df.Time.iloc[idx] - df.Time.iloc[0]
+        except IndexError:
+            return np.nan
 
     latencies = df.groupby('Trial').apply(detect_latency, thresh=df.RigidBody_Position.mean())
     latencies.name = 'TrackingLatency'
@@ -137,11 +140,10 @@ def find_global_minimum(x):
     is_positive_slope = ddx > 0
     is_local_minimum = is_zerocrossing & is_positive_slope
     local_minimum_indices = np.where(is_local_minimum)[0] + 1
-
     if any(is_local_minimum):
         global_minimum_indices = local_minimum_indices[np.argmin(x[local_minimum_indices])]
     else: # which means that there is no trough
-        global_minimum_indices = np.where(x == x.min())[0]
+        global_minimum_indices = np.where(x == x.min())[0][0]
 
     global_minimum_index = int(global_minimum_indices)
     return global_minimum_index
@@ -188,8 +190,8 @@ def plot_shifted_brightness_over_session(time, sensor_brightness, shift_by, tria
 def plot_brightness_threshold(sensor_brightness, thresh=.75, ax=None):
     """Create a line plot for the threshold values chosen for latecny measurement"""
     ax = ax if ax else plt.gca()
-    ax.hlines([perc_range(sensor_brightness, thresh)], *ax.get_xlim(), 'b', label='Threshold', linewidth=2,
-               linestyle='dotted')
+    ax.hlines([perc_range(sensor_brightness, thresh)], *ax.get_xlim(), color='b', label='Threshold', linewidth=2,
+              linestyle='dotted')
     return ax
 
 
