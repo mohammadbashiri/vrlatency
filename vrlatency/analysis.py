@@ -33,9 +33,8 @@ def get_display_latencies(df, thresh=.75):
         is_trial = trialf == trial
         sensor = sensorf[is_trial]
         time = timef[is_trial]
-        off_idx = np.where(sensor < threshf)[0][0]
-
         try:
+            off_idx = np.where(sensor < threshf)[0][0]
             detect_idx = np.where(sensor[off_idx:] > threshf)[0][0]
             latency = time[detect_idx + off_idx] - time[0]
             latencies.append(latency)
@@ -51,8 +50,11 @@ def get_tracking_latencies(df):
     """ Returns the latency values for each trial of a Tracking Experiment"""
     def detect_latency(df, thresh):
         diff = np.diff(df.RigidBody_Position > thresh)
-        idx = np.where(diff != 0)[0][0]
-        return df.Time.iloc[idx] - df.Time.iloc[0]
+        try:
+            idx = np.where(diff != 0)[0][0]
+            return df.Time.iloc[idx] - df.Time.iloc[0]
+        except IndexError:
+            return np.nan
 
     latencies = df.groupby('Trial').apply(detect_latency, thresh=df.RigidBody_Position.mean())
     latencies.name = 'TrackingLatency'
@@ -89,7 +91,7 @@ def get_total_latencies(df):
 #         transition_samples.append(transition_sample)
 #     return transition_samples
 
-def add_clusters(dd, winsize=10, sse_thresh=.1):
+def add_clusters(dd, winsize=30, sse_thresh=.1):
     """Depending on the SSE checks if there are more than one cluster among trials"""
     query = '(-5 < TrialTransitionTime) & (TrialTransitionTime < 5)'
     dd2 = dd.query(query)
@@ -99,8 +101,8 @@ def add_clusters(dd, winsize=10, sse_thresh=.1):
     for trialnum, trial in dd2.groupby('Trial'):
         test_sensor = trial['SensorBrightness'].values
         residuals = compute_sse(test_sensor, ref_sensor, win=winsize)
-        residuals = residuals / residuals.max()
         minimum = find_global_minimum(residuals)
+        residuals = residuals / residuals.max()
         min_sse = residuals[minimum]
         dd.loc[dd.Trial == trialnum, 'Cluster'] = 0 if min_sse < sse_thresh else 1
 
@@ -125,7 +127,10 @@ def transform_display_df(df, session, thresh=.75):
 
 def compute_sse(x1, x2, win=100):
     x1_mat = np.ndarray(buffer=x1, shape=(len(x1)-win, win), strides=(8, 8), dtype=x1.dtype)  # Rolling backwards
-    return np.sum((x1_mat.T - x2[win//2:-win//2]) ** 2, axis=1)
+    error = x1_mat.T - x2[win//2:win//2 + x1_mat.shape[0]]
+    sse = np.sum(error ** 2, axis=1) # -win//2
+    assert len(sse) > 0
+    return sse
 
 
 def find_global_minimum(x):
@@ -134,14 +139,17 @@ def find_global_minimum(x):
     is_zerocrossing = (dx[1:] * dx[:-1]) < 0
     is_positive_slope = ddx > 0
     is_local_minimum = is_zerocrossing & is_positive_slope
-
     local_minimum_indices = np.where(is_local_minimum)[0] + 1
-    global_minimum_indices = local_minimum_indices[np.argmin(x[local_minimum_indices])]
+    if any(is_local_minimum):
+        global_minimum_indices = local_minimum_indices[np.argmin(x[local_minimum_indices])]
+    else: # which means that there is no trough
+        global_minimum_indices = np.where(x == x.min())[0][0]
+
     global_minimum_index = int(global_minimum_indices)
     return global_minimum_index
 
 
-def shift_by_sse(dd):
+def shift_by_sse(dd, winsize=30):
     """Using Sum of Squared errors between brightness signal of each trial to overlay them"""
     sampling_rate = np.diff(dd.TrialTime.values[:2])[0]
     query = '(-5 < TrialTransitionTime) & (TrialTransitionTime < 5)'
@@ -150,7 +158,6 @@ def shift_by_sse(dd):
     ref_trial = dd2[dd2.DisplayLatency == dd2.DisplayLatency.min()]  # Min latency used as reference
     ref_sensor = ref_trial['SensorBrightness'].values
 
-    winsize = 30
     for trialnum, trial in dd2.groupby('Trial'):
         test_sensor = trial['SensorBrightness'].values
         residuals = compute_sse(test_sensor, ref_sensor, win=winsize)
@@ -191,8 +198,8 @@ def plot_shifted_brightness_over_session(time, sensor_brightness, shift_by, tria
 def plot_brightness_threshold(sensor_brightness, thresh=.75, ax=None):
     """Create a line plot for the threshold values chosen for latecny measurement"""
     ax = ax if ax else plt.gca()
-    ax.hlines([perc_range(sensor_brightness, thresh)], *ax.get_xlim(), 'b', label='Threshold', linewidth=2,
-               linestyle='dotted')
+    ax.hlines([perc_range(sensor_brightness, thresh)], *ax.get_xlim(), color='b', label='Threshold', linewidth=2,
+              linestyle='dotted')
     return ax
 
 
