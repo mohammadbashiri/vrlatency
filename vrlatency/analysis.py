@@ -265,22 +265,48 @@ def plot_display_figures(dd):
     return fig
 
 
+def transform_tracking_df(dfd, session):
+    dfd['Time'] *= 1000
+    dfd['Sample'] = dfd.groupby('Trial').cumcount()
+    dfd['RigidBody_Position_norm'] = dfd['RigidBody_Position'] - dfd.RigidBody_Position.mean()
+    dfd['LED_State'] = dfd['RigidBody_Position_norm'].max()
+    dfd.loc[dfd['LED_Position'] == 'R', 'LED_State'] = dfd['RigidBody_Position_norm'].min()
+    dfd['Session'] = session
+    dfd['Session'] = pd.Categorical(dfd['Session'])
+    dfd = dfd.reindex(['Session', 'Trial', 'Sample', 'Time', 'RigidBody_Position', 'RigidBody_Position_norm', 'LED_Position', 'LED_State'], axis=1)
+    dfl = get_tracking_latencies(dfd).to_frame().reset_index()
+    df = pd.merge(dfd, dfl, on='Trial')
+
+    return df
+
+
+
 def plot_rigid_body_position(time, position, ax=None):
     ax = ax if ax else plt.gca()
 
 
-
-
 def plot_tracking_figures(dd):
     """Returns a figure with all info concerning tracking experiment."""
+
     session = dd.Session.values[0]
+    trial_init_time = dd.groupby('Trial').Time.apply(lambda x: x.min()).values
+
     fig = plt.figure(figsize=(8, 8))
     gs = GridSpec(2, 2)
     ax1, ax2, ax3 = plt.subplot(gs[0, :]), plt.subplot(gs[1, 0]), plt.subplot(gs[1, 1])
 
-    plot_rigid_body_position(dd['Time'].values, dd['RigidBody_Position_norm'].values, ax=ax1)
-    plot_tracking_latency(trial=dd['Trial'], latencies=dd['TrackingLatency'], ax=ax2)
-    plot_tracking_latency_distribution(latencies=dd['TrackingLatency'], ax=ax3)
+    ax1.plot(dd.Time, dd.RigidBody_Position_norm, c='k')
+    ax1.plot(dd.Time, dd.LED_State, c='g')
+    ax1.scatter(dd.Time, dd.RigidBody_Position_norm, c='k', alpha=.3)
+    ax1.vlines(trial_init_time, *ax1.get_ylim(), 'r')
+    ax1.set(xlabel='Time (ms)', ylabel='Rigid body position (cm)')
+
+    ax2.plot(dd.Trial, dd.TrackingLatency.values, color='k')
+    ax2.set(xlabel='Trial number', ylabel='Latency (ms)')
+
+    # plot_rigid_body_position(dd['Time'].values, dd['RigidBody_Position_norm'].values, ax=ax1)
+    # plot_tracking_latency(trial=dd['Trial'], latencies=dd['TrackingLatency'], ax=ax2)
+    # plot_tracking_latency_distribution(latencies=dd['TrackingLatency'], ax=ax3)
 
     fig.suptitle(session)
     fig.tight_layout(w_pad=0)

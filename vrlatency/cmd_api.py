@@ -1,6 +1,6 @@
 import click
 import vrlatency as vrl
-from vrlatency.analysis import perc_range, read_csv, transform_display_df, shift_by_sse, plot_display_figures
+from vrlatency.analysis import perc_range, read_csv, transform_display_df, shift_by_sse, plot_display_figures, transform_tracking_df, plot_tracking_figures
 import matplotlib.pyplot as plt
 import seaborn as sns
 import time
@@ -129,6 +129,12 @@ def tracking(port, baudrate, trials, interval, jitter, rigid_body, output):
     exp = vrl.TrackingExperiment(arduino=arduino, trials=trials, fullscreen=True, on_width=on_width, rigid_body=led)
     exp.run()
     exp.save(filename=path.join(output, exp.filename))
+
+    df = read_csv(path=path.join(output, exp.filename))
+    session_name = exp.filename.split('.')[0]
+    df_transformed = transform_tracking_df(df, session=session_name)
+    plot_tracking_figures(df_transformed)
+    plt.show()
 
 
 @cli.command()
