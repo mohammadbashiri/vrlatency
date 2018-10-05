@@ -4,6 +4,7 @@ from io import StringIO
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import cm, colors
+from matplotlib.gridspec import GridSpec
 
 
 def read_params(path):
@@ -80,16 +81,6 @@ def get_total_latencies(df):
     # Return dataframe of latencies (Trials x (Group, Latency)
     return latencies
 
-
-# def get_transition_samplenum(session):
-#     transition_samples = []
-#     for _, trial in session.groupby('Trial'):
-#         try:
-#             transition_sample = trial[trial.TrialTransitionTime == 0].Sample.values[0]
-#         except:
-#             transition_sample = np.nan
-#         transition_samples.append(transition_sample)
-#     return transition_samples
 
 def add_clusters(dd, winsize=30, sse_thresh=.1):
     """Depending on the SSE checks if there are more than one cluster among trials"""
@@ -266,6 +257,30 @@ def plot_display_figures(dd):
     ax3.set_ylim(*ax4.get_ylim())
     ax4.set(xticklabels='', yticklabels='')
     ax3.set(xlabel='Trial', ylabel='Latency (ms)')
+
+    fig.suptitle(session)
+    fig.tight_layout(w_pad=0)
+    fig.subplots_adjust(top=.9)
+
+    return fig
+
+
+def plot_rigid_body_position(time, position, ax=None):
+    ax = ax if ax else plt.gca()
+
+
+
+
+def plot_tracking_figures(dd):
+    """Returns a figure with all info concerning tracking experiment."""
+    session = dd.Session.values[0]
+    fig = plt.figure(figsize=(8, 8))
+    gs = GridSpec(2, 2)
+    ax1, ax2, ax3 = plt.subplot(gs[0, :]), plt.subplot(gs[1, 0]), plt.subplot(gs[1, 1])
+
+    plot_rigid_body_position(dd['Time'].values, dd['RigidBody_Position_norm'].values, ax=ax1)
+    plot_tracking_latency(trial=dd['Trial'], latencies=dd['TrackingLatency'], ax=ax2)
+    plot_tracking_latency_distribution(latencies=dd['TrackingLatency'], ax=ax3)
 
     fig.suptitle(session)
     fig.tight_layout(w_pad=0)
