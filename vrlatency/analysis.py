@@ -76,7 +76,7 @@ def get_total_latencies(df):
     # Apply trial-based time series analysis
     trials = data.groupby('Trial')
     latencies = trials.apply(lambda df: (df.Time.iloc[[np.where(df.Sensor > thresh)[0][0]]] - df.Time.iloc[0]).values[0])
-    latencies.name = 'Total Trial Latency (us)'
+    latencies.name = 'TotalLatency'
 
     # Return dataframe of latencies (Trials x (Group, Latency)
     return latencies
@@ -313,3 +313,4 @@ def plot_tracking_figures(dd):
     fig.subplots_adjust(top=.9)
 
     return fig
+
