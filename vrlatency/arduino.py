@@ -19,7 +19,7 @@ class Arduino(object):
         - channel:
     """
     options = {'Display': dict(packet_fmt='HH', packet_size=4, exp_char='D'),
-               'Total': dict(packet_fmt='3H?', packet_size=7, exp_char='S'),
+               'Total': dict(packet_fmt='3Hc', packet_size=7, exp_char='S'),
                'Tracking': dict(packet_fmt='?', packet_size=1, exp_char='T'),
                }
 

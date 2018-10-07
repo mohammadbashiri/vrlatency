@@ -224,7 +224,7 @@ class TotalExperiment(BaseExperiment):
 
         super(self.__class__, self).__init__(*args, stim=stim, **kwargs)
         self.rigid_body = rigid_body
-        self.data_columns = ['Trial', 'Time', 'LeftSensorBrightness', 'RightSensorBrightness', 'LED_State']
+        self.data_columns = ['Trial', 'Time', 'LeftSensorBrightness', 'RightSensorBrightness', 'LED_Position']
 
         self.stim_distance = stim_distance
         mean_rb_pos, n_checks = 0, 100
