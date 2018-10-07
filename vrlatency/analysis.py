@@ -281,32 +281,60 @@ def transform_tracking_df(dfd, session):
 
 
 
-def plot_rigid_body_position(time, position, ax=None):
+def plot_rb_position(time, position, ax=None):
     ax = ax if ax else plt.gca()
+    ax.plot(time, position, c='k')
+    ax.scatter(time, position, c='k', alpha=.3)
+    return ax
+
+
+def plot_trial_init(init_times, ax=None):
+    ax = ax if ax else plt.gca()
+    ax.vlines(init_times, *ax.get_ylim(), 'r')
+    return ax
+
+
+def plot_led_state(time, state, ax=None):
+    ax =ax if ax else plt.gca()
+    ax.plot(time, state, c='g')
+    return ax
+
+
+def plot_tracking_latency_over_session(trial, latencies, ax=None):
+    ax = ax if ax else plt.gca()
+    ax.plot(trial, latencies, color='k')
+    return ax
+
+
+def plot_tracking_latency_distribution(latencies, ax=None):
+    """Creates the distribution of the latency values"""
+    ax = ax if ax else plt.gca()
+    sns.distplot(latencies[np.isnan(latencies) == False],
+                 hist=True, color="k", kde_kws={"linewidth": 3, "alpha": 1}, vertical=True, ax=ax)
+    return ax
 
 
 def plot_tracking_figures(dd):
     """Returns a figure with all info concerning tracking experiment."""
 
     session = dd.Session.values[0]
-    trial_init_time = dd.groupby('Trial').Time.apply(lambda x: x.min()).values
+
 
     fig = plt.figure(figsize=(8, 8))
-    gs = GridSpec(2, 2)
-    ax1, ax2, ax3 = plt.subplot(gs[0, :]), plt.subplot(gs[1, 0]), plt.subplot(gs[1, 1])
+    gs = GridSpec(2, 4)
+    ax1, ax2, ax3 = plt.subplot(gs[0, :]), plt.subplot(gs[1, :3]), plt.subplot(gs[1, 3])
 
-    ax1.plot(dd.Time, dd.RigidBody_Position_norm, c='k')
-    ax1.plot(dd.Time, dd.LED_State, c='g')
-    ax1.scatter(dd.Time, dd.RigidBody_Position_norm, c='k', alpha=.3)
-    ax1.vlines(trial_init_time, *ax1.get_ylim(), 'r')
+    plot_rb_position(dd['Time'], dd['RigidBody_Position_norm'], ax=ax1)
+    trial_init_time = dd.groupby('Trial').Time.apply(lambda x: x.min()).values
+    plot_trial_init(trial_init_time, ax=ax1)
+    # plot_led_state(dd['Time'], dd['LED_State'], ax=ax1)
     ax1.set(xlabel='Time (ms)', ylabel='Rigid body position (cm)')
 
-    ax2.plot(dd.Trial, dd.TrackingLatency.values, color='k')
+    plot_tracking_latency_over_session(dd['Trial'], dd['TrackingLatency'], ax=ax2)
     ax2.set(xlabel='Trial number', ylabel='Latency (ms)')
 
-    # plot_rigid_body_position(dd['Time'].values, dd['RigidBody_Position_norm'].values, ax=ax1)
-    # plot_tracking_latency(trial=dd['Trial'], latencies=dd['TrackingLatency'], ax=ax2)
-    # plot_tracking_latency_distribution(latencies=dd['TrackingLatency'], ax=ax3)
+    plot_tracking_latency_distribution(dd['TrackingLatency'].values, ax=ax3)
+    ax3.set(xticklabels='', yticklabels='')
 
     fig.suptitle(session)
     fig.tight_layout(w_pad=0)
@@ -314,3 +342,29 @@ def plot_tracking_figures(dd):
 
     return fig
 
+def transform_total_df(dfd, session):
+    thresh = .75
+
+    dfd['LED_Position'] = dfd.LED_Position.apply(lambda x: x[2])
+    dfd['Time'] /= 1000
+    dfd['TrialTime'] = dfd.groupby('Trial').Time.apply(lambda x: x - x.min())
+    dfd['Sample'] = dfd.groupby('Trial').cumcount()
+    dfd['Session'] = session
+    dfd['Session'] = pd.Categorical(dfd['Session'])
+    dfd['ThreshPerc'] = thresh
+    dfd['SensorBrightness'] = 0
+    dfd.loc[dfd['LED_Position'] == 'L', 'SensorBrightness'] = dfd.loc[dfd['LED_Position'] == 'L', 'LeftSensorBrightness']
+    dfd.loc[dfd['LED_Position'] == 'R', 'SensorBrightness'] = dfd.loc[dfd['LED_Position'] == 'R', 'RightSensorBrightness']
+    del dfd['LeftSensorBrightness']
+    del dfd['RightSensorBrightness']
+    dfd = dfd.reindex(['Session', 'Trial', 'Sample', 'Time', 'TrialTime', 'SensorBrightness', 'LED_Position', 'ThreshPerc'], axis=1)
+
+    # get latencies for each one of them (to_left and to_right transitions)
+    dfl = get_display_latencies(dfd).to_frame().reset_index()
+
+    # merge latencies dataframe with the data dataframe
+    df = pd.merge(dfd, dfl, on='Trial')
+
+    df['TrialTransitionTime'] = df['TrialTime'] - df['DisplayLatency']
+
+    return df
