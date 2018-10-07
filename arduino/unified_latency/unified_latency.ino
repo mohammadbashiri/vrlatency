@@ -111,7 +111,7 @@ void loop() {
       else{
         digitalWrite(right_LED, HIGH);
         digitalWrite(left_LED, LOW);
-        led_position= 'R';
+        led_position = 'R';
         }
       
       struct Packet {
