@@ -1,6 +1,6 @@
 import click
 import vrlatency as vrl
-from vrlatency.analysis import perc_range, read_csv, transform_display_df, shift_by_sse, plot_display_figures, transform_tracking_df, plot_tracking_figures
+from vrlatency.analysis import perc_range, read_csv, transform_display_df, shift_by_sse, plot_display_figures, transform_tracking_df, plot_tracking_figures,transform_total_df, add_clusters
 import matplotlib.pyplot as plt
 import seaborn as sns
 import time
@@ -159,6 +159,16 @@ def total(port, baudrate, trials, stimdistance, stimsize, screen, interval, jitt
     exp.run()
     exp.save(filename=path.join(output, exp.filename))
 
+    df = read_csv(path=path.join(output, exp.filename))
+    session_name = exp.filename.split('.')[0]
+
+    df_transformed = transform_total_df(df, session=session_name)
+    for name, dd in df_transformed.groupby('LED_Position'):
+        df_clusters_added = add_clusters(dd)
+        df_clustered = df_clusters_added[df_clusters_added.Cluster == 0].copy()
+        df_shifted = vrl.analysis.shift_by_sse(df_clustered)
+        vrl.analysis.plot_display_figures(df_shifted)
+    plt.show()
 
 if __name__ == "__main__":
     cli()

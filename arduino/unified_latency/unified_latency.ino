@@ -4,20 +4,11 @@ int analogPin_Left = 0;         // Left PhotoDiode connect on anaglog pin2
 int analogPin_Right = 1;        // Right PhotoDiode connect on anaglog pin3
 int averaged_sensor_value = 0;
 
-bool led_state = 0;
+char led_position = 'L';
 int i = 0;
-
 int received_data = 0;
 int ping = 0;
-
 bool toggle = true;
-
-struct Packet {
-  unsigned long time_m;
-  int left; 
-  int right;
-  bool LED_state;
-};
 
 struct Command {
   char experiment_type;
@@ -112,27 +103,27 @@ void loop() {
     /* Total Experiment */
     else if (command.experiment_type == 83){  // ord('S') - Total
 
-      if (led_state){
+      if (led_position == 'R'){
         digitalWrite(right_LED, LOW);
         digitalWrite(left_LED, HIGH);
-        led_state = 0;
+        led_position = 'L';
         }
       else{
         digitalWrite(right_LED, HIGH);
         digitalWrite(left_LED, LOW);
-        led_state = 1;
+        led_position = 'R';
         }
       
       struct Packet {
         unsigned int time_m;
         int left;
         int right;
-        bool led_state;
+        char led_position;
       };
       Packet packets[command.nsamples];
       
       for (i=0; i < command.nsamples; i++){
-        packets[i] = {(unsigned int)(micros() - start_micros), analogRead(analogPin_Left), analogRead(analogPin_Right), led_state};
+        packets[i] = {(unsigned int)(micros() - start_micros), analogRead(analogPin_Left), analogRead(analogPin_Right), led_position};
 //        delayMicroseconds(100);
       }
       Serial.write((byte*)&packets, 7*(command.nsamples)); // 2 + 2 + 2 + 1
