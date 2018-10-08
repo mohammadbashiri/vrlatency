@@ -266,6 +266,7 @@ def plot_display_figures(dd):
 
 
 def transform_tracking_df(dfd, session):
+    dfd['Time'] -= dfd['Time'].min()
     dfd['Time'] *= 1000
     dfd['Sample'] = dfd.groupby('Trial').cumcount()
     dfd['RigidBody_Position_norm'] = dfd['RigidBody_Position'] - dfd.RigidBody_Position.mean()
