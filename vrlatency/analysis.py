@@ -311,7 +311,8 @@ def plot_tracking_latency_distribution(latencies, ax=None):
     """Creates the distribution of the latency values"""
     ax = ax if ax else plt.gca()
     sns.distplot(latencies[np.isnan(latencies) == False],
-                 hist=True, color="k", kde_kws={"linewidth": 3, "alpha": 1}, vertical=True, ax=ax)
+                 hist=True, color="k", bins=list(range(int(latencies.min()), int(latencies.max()), 1)),
+                 kde_kws={"linewidth": 3, "alpha": 1}, vertical=True, ax=ax)
     return ax
 
 
