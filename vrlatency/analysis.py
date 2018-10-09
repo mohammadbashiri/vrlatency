@@ -189,7 +189,7 @@ def plot_shifted_brightness_over_session(time, sensor_brightness, shift_by, tria
 def plot_brightness_threshold(sensor_brightness, thresh=.75, ax=None):
     """Create a line plot for the threshold values chosen for latecny measurement"""
     ax = ax if ax else plt.gca()
-    ax.hlines([perc_range(sensor_brightness, thresh)], *ax.get_xlim(), color='b', label='Threshold', linewidth=2,
+    ax.hlines([perc_range(sensor_brightness, thresh)], *ax.get_xlim(), color='k', label='Threshold', linewidth=2,
               linestyle='dotted')
     return ax
 
