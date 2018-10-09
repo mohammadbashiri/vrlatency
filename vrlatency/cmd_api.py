@@ -125,7 +125,7 @@ def tracking(port, baudrate, trials, interval, jitter, rigid_body, output):
     led = get_rigid_body(rigid_body)
 
     arduino = vrl.Arduino.from_experiment_type(experiment_type='Tracking', port=port, baudrate=baudrate, nsamples=1)
-    on_width = [interval, interval * 2] if jitter else interval
+    on_width = [interval, interval + 0.016667] if jitter else interval  # [interval, interval * 2] if jitter else interval
     exp = vrl.TrackingExperiment(arduino=arduino, trials=trials, fullscreen=True, on_width=on_width, rigid_body=led)
     exp.run()
     exp.save(filename=path.join(output, exp.filename))

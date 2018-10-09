@@ -1,1 +1,1 @@
-call measure_latency tracking --port COM11 --trials 1000 --interval .07  --output \\THETA\storage\nickdg\vrlatency
+call measure_latency tracking --port COM11 --trials 600 --interval .04  --output \\THETA\storage\nickdg\vrlatency

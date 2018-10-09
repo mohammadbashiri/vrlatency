@@ -97,7 +97,8 @@ class BaseExperiment(pyglet.window.Window):
         for self.current_trial in tqdm(range(1, self.trials + 2), ascii=True):
             self.dispatch_events()
             sleep(self.trial_delay)
-            self.flip()
+            if self.params['Experiment'] != 'TrackingExperiment':
+                self.flip()
             self.arduino.init_next_trial() if self.arduino else None
             self.run_trial()
             if self.current_trial == 1 and remove_first_trial:
@@ -181,6 +182,7 @@ class TrackingExperiment(BaseExperiment):
         """
         super(self.__class__, self).__init__(*args, visible=False, **kwargs)
         self.rigid_body = rigid_body
+        self.trial_delay = 0
         # self.on_width = _gen_iter(on_width)
         self.data_columns = ['Trial', 'Time', 'RigidBody_Position', 'LED_Position']
 
