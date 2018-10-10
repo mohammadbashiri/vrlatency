@@ -8,3 +8,4 @@ IF %DELETE_ALL_DATA%==y (
 
 call mkdir data
 call .\vendor\pscp\pscp -pw %THETA_PASSWD% %THETA_USER%@%THETA_IP%:/storage/%THETA_USER%/vrlatency/*.csv .\data
+call .\vendor\pscp\pscp -pw %THETA_PASSWD% %THETA_USER%@%THETA_IP%:/storage/%THETA_USER%/vrlatency/*.ods .\data

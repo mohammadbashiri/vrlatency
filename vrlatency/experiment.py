@@ -97,7 +97,7 @@ class BaseExperiment(pyglet.window.Window):
         for self.current_trial in tqdm(range(1, self.trials + 2), ascii=True):
             self.dispatch_events()
             sleep(self.trial_delay)
-            if self.params['Experiment'] != 'TrackingExperiment':
+            if self.params['Experiment'] == 'DisplayExperiment':
                 self.flip()
             self.arduino.init_next_trial() if self.arduino else None
             self.run_trial()
