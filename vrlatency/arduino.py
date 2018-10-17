@@ -18,7 +18,7 @@ class Arduino(object):
         - n_points:
         - channel:
     """
-    options = {'Display': dict(packet_fmt='HH', packet_size=4, exp_char='D'),
+    options = {'Display': dict(packet_fmt='LH', packet_size=6, exp_char='D'),
                'Total': dict(packet_fmt='3Hc', packet_size=7, exp_char='S'),
                'Tracking': dict(packet_fmt='?', packet_size=1, exp_char='T'),
                }

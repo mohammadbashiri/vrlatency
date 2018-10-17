@@ -58,7 +58,7 @@ void loop() {
 
   if (Serial.available() > 0){
 
-    unsigned int start_micros = (unsigned int)micros();
+    unsigned long start_micros = (unsigned long)micros();
 
     Serial.readBytes(input, 3);    
     Command* received_data = (Command*)&input;
@@ -71,17 +71,17 @@ void loop() {
       digitalWrite(11, LOW);
       
       struct Packet {
-        unsigned int time_m;
+        unsigned long time_m;
         int left; 
       };
       Packet packets[command.nsamples];
       
       for (i=0; i < command.nsamples; i++){
         averaged_sensor_value = (analogRead(analogPin_Left) + analogRead(analogPin_Right)) / 2;
-        packets[i] = {(unsigned int)(micros() - start_micros), averaged_sensor_value};
+        packets[i] = {(unsigned long)(micros() - start_micros), averaged_sensor_value};
 //        delayMicroseconds(100);
       }
-      Serial.write((byte*)&packets, 4*(command.nsamples)); // 2 + 2
+      Serial.write((byte*)&packets, 6*(command.nsamples)); // 2 + 2
     }
 
 

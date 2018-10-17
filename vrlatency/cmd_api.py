@@ -107,6 +107,14 @@ def display(port, baudrate, trials, stimsize, delay, screen, interval, jitter, a
         exp.save(filename=path.join(output, exp.filename))
 
         df = read_csv(path=path.join(output, exp.filename))  # TODO: fix inconsistent arg name! path or filename!?
+
+        # fig, (ax1, ax2) = plt.subplots(1, 2)
+        #
+        # for name, trial in df.groupby('Trial'):
+        #     ax1.plot(trial.Time, trial.SensorBrightness)
+        #     ax2.plot(trial.Time)
+            # plt.show()
+
         session_name = exp.filename.split('.')[0]
         df_transformed = transform_display_df(df, session=session_name, thresh=.75)
         df_clustered = df_transformed[df_transformed.Cluster == 0].copy()
