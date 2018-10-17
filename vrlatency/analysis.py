@@ -169,7 +169,7 @@ def get_average_time_and_brightness(dd, bins=70):
     return avg_transitiontime.values, avg_brightness.values
 
 
-def plot_shifted_brightness_over_session(time, sensor_brightness, shift_by, trial_idx, ax=None):
+def plot_shifted_brightness_over_session(time, sensor_brightness, shift_by, trial_idx, ax=None, **kwargs):
     """creates a plot of all the shifted (overlaid on each other) brightness values over a single session
     Args:
         time: time points as the x-axis
@@ -181,7 +181,7 @@ def plot_shifted_brightness_over_session(time, sensor_brightness, shift_by, tria
     ax = ax if ax else plt.gca()
     for trial in trial_idx.unique():
         # ax.scatter(time[trial_idx == trial] + shift_by, sensor_brightness[trial_idx == trial])#, c='r', linewidth=1)#, alpha=.01)
-        ax.plot(time[trial_idx == trial] + shift_by, sensor_brightness[trial_idx == trial], c='r', linewidth=1, alpha=.01)
+        ax.plot(time[trial_idx == trial] + shift_by, sensor_brightness[trial_idx == trial], linewidth=1, alpha=.01, **kwargs)
 
     return ax
 
