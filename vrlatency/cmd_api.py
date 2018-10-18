@@ -100,7 +100,7 @@ def display(port, baudrate, trials, stimsize, delay, screen, interval, jitter, a
             monitor.set_mode(mode)
             time.sleep(10)
 
-        exp = vrl.DisplayExperiment(arduino=arduino,
+        exp = vrl.DisplayExperiment(arduino=arduino,# vsync=False,
                                     trials=trials, fullscreen=True, on_width=on_width,
                                     trial_delay=delay, screen_ind=screen, stim=stim)
         exp.run()

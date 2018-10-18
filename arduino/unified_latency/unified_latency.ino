@@ -75,10 +75,16 @@ void loop() {
         int left; 
       };
       Packet packets[command.nsamples];
-      
-      for (i=0; i < command.nsamples; i++){
+
+      unsigned long trial_time;
+      int i = 0;
+      while (i < command.nsamples){
+        trial_time = (unsigned long)(micros() - start_micros);
         averaged_sensor_value = (analogRead(analogPin_Left) + analogRead(analogPin_Right)) / 2;
-        packets[i] = {(unsigned long)(micros() - start_micros), averaged_sensor_value};
+        if (trial_time > 16000){
+          packets[i] = {trial_time, averaged_sensor_value};
+          i++;
+        }
 //        delayMicroseconds(100);
       }
       Serial.write((byte*)&packets, 6*(command.nsamples)); // 2 + 2

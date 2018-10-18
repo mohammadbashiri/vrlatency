@@ -298,7 +298,8 @@ def plot_rb_position(time, position, ax=None):
 
 def plot_trial_init(init_times, ax=None):
     ax = ax if ax else plt.gca()
-    ax.vlines(init_times, *ax.get_ylim(), 'r')
+    ymin, ymax = ax.get_ylim()
+    ax.vlines(init_times, ymin, ymax, 'r')
     return ax
 
 
