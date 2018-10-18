@@ -84,7 +84,10 @@ def get_total_latencies(df):
 
 def add_clusters(dd, winsize=30, sse_thresh=.1):
     """Depending on the SSE checks if there are more than one cluster among trials"""
-    query = '(-5 < TrialTransitionTime) & (TrialTransitionTime < 5)'
+    lowest_delay = dd.loc[dd.Trial == dd[dd.DisplayLatency == dd.DisplayLatency.min()].Trial.values[0], 'TrialTransitionTime'].min()
+    lower_bound = -5 if lowest_delay < -5 else lowest_delay
+    query = '({} < TrialTransitionTime) & (TrialTransitionTime < {})'.format(lower_bound, lower_bound+ 10)
+    # query = '(-5 < TrialTransitionTime) & (TrialTransitionTime < 5)'
     dd2 = dd.query(query)
     ref_trial = dd2[dd2.DisplayLatency == dd2.DisplayLatency.min()]  # Min latency used as reference
     ref_sensor = ref_trial['SensorBrightness'].values
@@ -117,7 +120,6 @@ def transform_display_df(df, session, winsize=30, thresh=.75):
 
 
 def compute_sse(x1, x2, win=30):
-    x1 = x1[:len(x2)]  # making sure they are the same size
     x1_mat = np.ndarray(buffer=x1, shape=(len(x1)-win, win), strides=(8, 8), dtype=x1.dtype)  # Rolling backwards
     error = x1_mat.T - x2[win//2:win//2 + x1_mat.shape[0]]
     sse = np.sum(error ** 2, axis=1) # -win//2
@@ -144,7 +146,11 @@ def find_global_minimum(x):
 def shift_by_sse(dd, winsize=30):
     """Using Sum of Squared errors between brightness signal of each trial to overlay them"""
     sampling_rate = np.diff(dd.TrialTime.values[:2])[0]
-    query = '(-5 < TrialTransitionTime) & (TrialTransitionTime < 5)'
+
+    lowest_delay = dd.loc[dd.Trial == dd[dd.DisplayLatency == dd.DisplayLatency.min()].Trial.values[0], 'TrialTransitionTime'].min()
+    lower_bound = -5 if lowest_delay < -5 else lowest_delay
+    query = '({} < TrialTransitionTime) & (TrialTransitionTime < {})'.format(lower_bound, lower_bound+ 10)
+    # query = '(-5 < TrialTransitionTime) & (TrialTransitionTime < 5)'
     dd2 = dd.query(query)
 
     ref_trial = dd2[dd2.DisplayLatency == dd2.DisplayLatency.min()]  # Min latency used as reference
