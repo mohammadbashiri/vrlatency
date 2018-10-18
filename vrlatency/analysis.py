@@ -251,7 +251,7 @@ def plot_display_figures(dd):
 
     mean_latency = dd.groupby('Trial').DisplayLatency.mean().mean()
     plot_shifted_brightness_over_session(time=dd['TrialTransitionTime'], sensor_brightness=dd['SensorBrightness'],
-                                         trial_idx = dd['Trial'], shift_by=mean_latency, ax=ax1)
+                                         trial_idx = dd['Trial'], shift_by=mean_latency, ax=ax1, c='r')
 
     plot_brightness_threshold(sensor_brightness=dd['SensorBrightness'], thresh=dd['ThreshPerc'].values[0], ax=ax1)
     plot_display_brightness_distribution(sensor_brightness=dd['SensorBrightness'].values, ax=ax2)
