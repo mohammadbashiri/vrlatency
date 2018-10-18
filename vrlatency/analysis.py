@@ -100,7 +100,7 @@ def add_clusters(dd, winsize=30, sse_thresh=.1):
     return dd
 
 
-def transform_display_df(df, session, thresh=.75):
+def transform_display_df(df, session, winsize=30, thresh=.75):
     """Return dataframe object needed for the analysis"""
     df['Time'] /= 1000
     df['TrialTime'] = df.groupby('Trial').Time.apply(lambda x: x - x.min())
@@ -113,10 +113,11 @@ def transform_display_df(df, session, thresh=.75):
     dfl['TrialTransitionTime'] = dfl['TrialTime'] - dfl['DisplayLatency']
     dfl['ThreshPerc'] = thresh
 
-    return add_clusters(dfl)
+    return add_clusters(dfl, winsize=winsize)
 
 
-def compute_sse(x1, x2, win=100):
+def compute_sse(x1, x2, win=30):
+    x1 = x1[:len(x2)]  # making sure they are the same size
     x1_mat = np.ndarray(buffer=x1, shape=(len(x1)-win, win), strides=(8, 8), dtype=x1.dtype)  # Rolling backwards
     error = x1_mat.T - x2[win//2:win//2 + x1_mat.shape[0]]
     sse = np.sum(error ** 2, axis=1) # -win//2
