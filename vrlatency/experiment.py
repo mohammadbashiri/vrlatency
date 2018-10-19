@@ -31,7 +31,7 @@ class BaseExperiment(pyglet.window.Window):
         - off_width:
     """
 
-    def __init__(self, arduino=None, screen_ind=0, trials=20, stim=None, trial_delay=.05,
+    def __init__(self, arduino=None, screen_ind=0, trials=20, stim=None, trial_delay=.05, jitter_delay=.04,
                  on_width=.5, bckgrnd_color=(0, 0, 0), *args, **kwargs):
         """Integrates other components and let's use to run, record and store experiment data
 
@@ -65,6 +65,8 @@ class BaseExperiment(pyglet.window.Window):
         self.on_width = _gen_iter(on_width)
         self.off_width = _gen_iter(on_width[0]) if hasattr(on_width, '__iter__') else _gen_iter(on_width)
         self.trial_delay = trial_delay
+        self.jitter_delay = jitter_delay
+
 
         self.params = OrderedDict()
         self.params['Experiment'] = self.__class__.__name__
@@ -77,6 +79,7 @@ class BaseExperiment(pyglet.window.Window):
         self.params['TrialDelay'] = self.trial_delay
         self.params['OnWidth'] = str(on_width)
         self.params['BackgroundColor'] = str(bckgrnd_color)
+        self.params['jitter_delay'] = str(jitter_delay)
         if self.stim:
             self.params['StimSize'] = stim.size
             self.params['StimColor'] = stim.color
@@ -96,12 +99,12 @@ class BaseExperiment(pyglet.window.Window):
         sleep(.5)
         for self.current_trial in tqdm(range(1, self.trials + 2), ascii=True):
             self.dispatch_events()
-            sleep(self.trial_delay)
-            self.flip()
+            # sleep(self.trial_delay)  # todo: cut this
             self.arduino.init_next_trial() if self.arduino else None
             self.run_trial()
             if self.current_trial == 1 and remove_first_trial:
                 self.data = []
+            sleep(random.random() * 1. / self.screen.get_mode().rate)
 
         self.close()
 
@@ -150,13 +153,17 @@ class DisplayExperiment(BaseExperiment):
         self.clear()
         self.stim.draw()
         self.flip()
-        sleep(next(self.on_width))
+        inter_frame_interval = 1. / self.screen.get_mode().rate
+        if not self.vsync:
+            sleep(inter_frame_interval)
         self.clear()
         self.flip()
-        sleep(next(self.off_width))
+        if not self.vsync:
+            sleep(inter_frame_interval)
         if self.arduino:
             dd = [(self.current_trial,) + el for el in self.arduino.read()]
             self.data.extend(dd) if self.arduino else None
+
 
 
 class TrackingExperiment(BaseExperiment):
@@ -181,6 +188,7 @@ class TrackingExperiment(BaseExperiment):
         """
         super(self.__class__, self).__init__(*args, visible=False, **kwargs)
         self.rigid_body = rigid_body
+        self.trial_delay = 0
         # self.on_width = _gen_iter(on_width)
         self.data_columns = ['Trial', 'Time', 'RigidBody_Position', 'LED_Position']
 

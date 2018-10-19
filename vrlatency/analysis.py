@@ -84,7 +84,10 @@ def get_total_latencies(df):
 
 def add_clusters(dd, winsize=30, sse_thresh=.1):
     """Depending on the SSE checks if there are more than one cluster among trials"""
-    query = '(-5 < TrialTransitionTime) & (TrialTransitionTime < 5)'
+    lowest_delay = dd.loc[dd.Trial == dd[dd.DisplayLatency == dd.DisplayLatency.min()].Trial.values[0], 'TrialTransitionTime'].min()
+    lower_bound = -5 if lowest_delay < -5 else lowest_delay
+    query = '({} < TrialTransitionTime) & (TrialTransitionTime < {})'.format(lower_bound, lower_bound+ 10)
+    # query = '(-5 < TrialTransitionTime) & (TrialTransitionTime < 5)'
     dd2 = dd.query(query)
     ref_trial = dd2[dd2.DisplayLatency == dd2.DisplayLatency.min()]  # Min latency used as reference
     ref_sensor = ref_trial['SensorBrightness'].values
@@ -100,7 +103,7 @@ def add_clusters(dd, winsize=30, sse_thresh=.1):
     return dd
 
 
-def transform_display_df(df, session, thresh=.75):
+def transform_display_df(df, session, winsize=30, thresh=.75):
     """Return dataframe object needed for the analysis"""
     df['Time'] /= 1000
     df['TrialTime'] = df.groupby('Trial').Time.apply(lambda x: x - x.min())
@@ -113,10 +116,10 @@ def transform_display_df(df, session, thresh=.75):
     dfl['TrialTransitionTime'] = dfl['TrialTime'] - dfl['DisplayLatency']
     dfl['ThreshPerc'] = thresh
 
-    return add_clusters(dfl)
+    return add_clusters(dfl, winsize=winsize)
 
 
-def compute_sse(x1, x2, win=100):
+def compute_sse(x1, x2, win=30):
     x1_mat = np.ndarray(buffer=x1, shape=(len(x1)-win, win), strides=(8, 8), dtype=x1.dtype)  # Rolling backwards
     error = x1_mat.T - x2[win//2:win//2 + x1_mat.shape[0]]
     sse = np.sum(error ** 2, axis=1) # -win//2
@@ -143,7 +146,11 @@ def find_global_minimum(x):
 def shift_by_sse(dd, winsize=30):
     """Using Sum of Squared errors between brightness signal of each trial to overlay them"""
     sampling_rate = np.diff(dd.TrialTime.values[:2])[0]
-    query = '(-5 < TrialTransitionTime) & (TrialTransitionTime < 5)'
+
+    lowest_delay = dd.loc[dd.Trial == dd[dd.DisplayLatency == dd.DisplayLatency.min()].Trial.values[0], 'TrialTransitionTime'].min()
+    lower_bound = -5 if lowest_delay < -5 else lowest_delay
+    query = '({} < TrialTransitionTime) & (TrialTransitionTime < {})'.format(lower_bound, lower_bound+ 10)
+    # query = '(-5 < TrialTransitionTime) & (TrialTransitionTime < 5)'
     dd2 = dd.query(query)
 
     ref_trial = dd2[dd2.DisplayLatency == dd2.DisplayLatency.min()]  # Min latency used as reference
@@ -169,7 +176,7 @@ def get_average_time_and_brightness(dd, bins=70):
     return avg_transitiontime.values, avg_brightness.values
 
 
-def plot_shifted_brightness_over_session(time, sensor_brightness, shift_by, trial_idx, ax=None):
+def plot_shifted_brightness_over_session(time, sensor_brightness, shift_by, trial_idx, ax=None, **kwargs):
     """creates a plot of all the shifted (overlaid on each other) brightness values over a single session
     Args:
         time: time points as the x-axis
@@ -181,7 +188,7 @@ def plot_shifted_brightness_over_session(time, sensor_brightness, shift_by, tria
     ax = ax if ax else plt.gca()
     for trial in trial_idx.unique():
         # ax.scatter(time[trial_idx == trial] + shift_by, sensor_brightness[trial_idx == trial])#, c='r', linewidth=1)#, alpha=.01)
-        ax.plot(time[trial_idx == trial] + shift_by, sensor_brightness[trial_idx == trial], c='r', linewidth=1, alpha=.01)
+        ax.plot(time[trial_idx == trial] + shift_by, sensor_brightness[trial_idx == trial], linewidth=1, alpha=.01, **kwargs)
 
     return ax
 
@@ -244,7 +251,7 @@ def plot_display_figures(dd):
 
     mean_latency = dd.groupby('Trial').DisplayLatency.mean().mean()
     plot_shifted_brightness_over_session(time=dd['TrialTransitionTime'], sensor_brightness=dd['SensorBrightness'],
-                                         trial_idx = dd['Trial'], shift_by=mean_latency, ax=ax1)
+                                         trial_idx = dd['Trial'], shift_by=mean_latency, ax=ax1, c='r')
 
     plot_brightness_threshold(sensor_brightness=dd['SensorBrightness'], thresh=dd['ThreshPerc'].values[0], ax=ax1)
     plot_display_brightness_distribution(sensor_brightness=dd['SensorBrightness'].values, ax=ax2)
@@ -291,7 +298,8 @@ def plot_rb_position(time, position, ax=None):
 
 def plot_trial_init(init_times, ax=None):
     ax = ax if ax else plt.gca()
-    ax.vlines(init_times, *ax.get_ylim(), 'r')
+    ymin, ymax = ax.get_ylim()
+    ax.vlines(init_times, ymin, ymax, 'r')
     return ax
 
 
@@ -311,7 +319,8 @@ def plot_tracking_latency_distribution(latencies, ax=None):
     """Creates the distribution of the latency values"""
     ax = ax if ax else plt.gca()
     sns.distplot(latencies[np.isnan(latencies) == False],
-                 hist=True, color="k", kde_kws={"linewidth": 3, "alpha": 1}, vertical=True, ax=ax)
+                 hist=True, color="k", bins=list(range(int(latencies.min()), int(latencies.max()), 1)),
+                 kde_kws={"linewidth": 3, "alpha": 1}, vertical=True, ax=ax)
     return ax
 
 

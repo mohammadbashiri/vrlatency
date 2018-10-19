@@ -100,13 +100,21 @@ def display(port, baudrate, trials, stimsize, delay, screen, interval, jitter, a
             monitor.set_mode(mode)
             time.sleep(10)
 
-        exp = vrl.DisplayExperiment(arduino=arduino,
+        exp = vrl.DisplayExperiment(arduino=arduino,# vsync=False,
                                     trials=trials, fullscreen=True, on_width=on_width,
                                     trial_delay=delay, screen_ind=screen, stim=stim)
         exp.run()
         exp.save(filename=path.join(output, exp.filename))
 
         df = read_csv(path=path.join(output, exp.filename))  # TODO: fix inconsistent arg name! path or filename!?
+
+        # fig, (ax1, ax2) = plt.subplots(1, 2)
+        #
+        # for name, trial in df.groupby('Trial'):
+        #     ax1.plot(trial.Time, trial.SensorBrightness)
+        #     ax2.plot(trial.Time)
+            # plt.show()
+
         session_name = exp.filename.split('.')[0]
         df_transformed = transform_display_df(df, session=session_name, thresh=.75)
         df_clustered = df_transformed[df_transformed.Cluster == 0].copy()
@@ -125,7 +133,7 @@ def tracking(port, baudrate, trials, interval, jitter, rigid_body, output):
     led = get_rigid_body(rigid_body)
 
     arduino = vrl.Arduino.from_experiment_type(experiment_type='Tracking', port=port, baudrate=baudrate, nsamples=1)
-    on_width = [interval, interval * 2] if jitter else interval
+    on_width = [interval, interval * 2] if jitter else interval  # [interval, interval + 0.016667] if jitter else interval
     exp = vrl.TrackingExperiment(arduino=arduino, trials=trials, fullscreen=True, on_width=on_width, rigid_body=led)
     exp.run()
     exp.save(filename=path.join(output, exp.filename))
